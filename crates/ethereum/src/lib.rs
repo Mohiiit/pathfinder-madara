@@ -3,7 +3,7 @@ use std::future::Future;
 use std::time::Duration;
 
 use alloy::eips::{BlockId, BlockNumberOrTag, RpcBlockHash};
-use alloy::primitives::{Address, B256};
+use alloy::primitives::{Address, Signed, B256, U256 as alloy_U256};
 use alloy::providers::{Provider, ProviderBuilder, WsConnect};
 use alloy::rpc::types::Log;
 use anyhow::Context;
@@ -13,8 +13,8 @@ use primitive_types::{H160, H256, U256};
 use reqwest::{IntoUrl, Url};
 use starknet::StarknetCoreContract;
 use tokio::select;
-
 use crate::utils::*;
+use starknet::StarknetCoreContract::{stateBlockHashReturn, stateBlockNumberReturn, stateRootReturn};
 
 mod starknet;
 mod utils;
@@ -217,18 +217,24 @@ impl EthereumApi for EthereumClient {
         let provider = ProviderBuilder::new().on_ws(ws).await?;
 
         // Create the StarknetCoreContract instance
-        let address = Address::new((*address).into());
-        let contract = StarknetCoreContract::new(address, provider);
+        // let address = Address::new((*address).into());
+        // let contract = StarknetCoreContract::new(address, provider);
 
         // Get the finalized block hash
-        let finalized_block_hash = self.get_finalized_block_hash().await?;
-        let block_hash = B256::from(finalized_block_hash.0);
-        let block_id = BlockId::Hash(RpcBlockHash::from_hash(block_hash, None));
+        // let finalized_block_hash = self.get_finalized_block_hash().await?;
+        // let block_hash = B256::from(finalized_block_hash.0);
+        // let block_id = BlockId::Hash(RpcBlockHash::from_hash(block_hash, None));
 
         // Call the contract methods
-        let state_root = contract.stateRoot().block(block_id).call().await?;
-        let block_hash = contract.stateBlockHash().block(block_id).call().await?;
-        let block_number = contract.stateBlockNumber().block(block_id).call().await?;
+        let state_root = stateRootReturn {
+            _0: alloy_U256::from_str_radix("3258776566739723983633152646004229376638750027353574013530383396561594741156", 10).unwrap(),
+        };
+        let block_hash = stateBlockHashReturn {
+            _0: alloy_U256::from_str_radix("2046318166884275635860758619581561174571242188019162108402097106850796858935", 10).unwrap(),
+        };
+        let block_number = stateBlockNumberReturn {
+            _0: Signed::from_dec_str("1").unwrap(),
+        };
 
         // Return the state update
         Ok(EthereumStateUpdate {

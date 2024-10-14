@@ -932,6 +932,7 @@ fn verify_block_and_state_update(
                 BlockValidationMode::AllowMismatch,
             ) => Ok(Default::default()),
             (_, VerifyResult::Mismatch, BlockValidationMode::Strict) => {
+                println!("i am here!!! Block hash mismatch");
                 Err(anyhow!("Block hash mismatch"))
             }
             _ => Err(anyhow!(

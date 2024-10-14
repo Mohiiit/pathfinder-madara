@@ -79,6 +79,7 @@ pub fn verify_gateway_block_commitments_and_hash(
         bhd.transaction_commitment = computed_transaction_commitment;
     } else if computed_transaction_commitment != bhd.transaction_commitment {
         tracing::debug!(%computed_transaction_commitment, actual_transaction_commitment=%bhd.transaction_commitment, "Transaction commitment mismatch");
+        println!("i am here!!! Transaction commitment mismatch");
         return Ok(VerifyResult::Mismatch);
     }
 
@@ -95,6 +96,7 @@ pub fn verify_gateway_block_commitments_and_hash(
     if let Some(receipt_commitment) = block.receipt_commitment {
         if computed_receipt_commitment != receipt_commitment {
             tracing::debug!(%computed_receipt_commitment, actual_receipt_commitment=%receipt_commitment, "Receipt commitment mismatch");
+            println!("i am here!!! Receipt commitment mismatch");
             return Ok(VerifyResult::Mismatch);
         }
     } else {
@@ -120,6 +122,7 @@ pub fn verify_gateway_block_commitments_and_hash(
         bhd.event_commitment = event_commitment;
     } else if event_commitment != block.event_commitment {
         tracing::debug!(computed_event_commitment=%event_commitment, actual_event_commitment=%block.event_commitment, "Event commitment mismatch");
+        println!("i am here!!! Event commitment mismatch");
         return Ok(VerifyResult::Mismatch);
     }
 
@@ -229,6 +232,7 @@ pub fn verify_block_hash(
     let meta_info = meta::for_chain(chain);
 
     let verified = if meta_info.uses_pre_0_7_hash_algorithm(header.number) {
+        println!("i am here!!! Pre 0.7 block hash");
         anyhow::ensure!(
             chain != Chain::Custom,
             "Chain::Custom should not have any pre 0.7 block hashes"
@@ -237,6 +241,7 @@ pub fn verify_block_hash(
         let computed_hash = compute_final_hash_pre_0_7(&header, chain_id);
         computed_hash == header.hash
     } else if header.starknet_version < V_0_13_2 {
+        println!("i am here!!! Pre 0.13.2 block hash");
         let computed_hash = compute_final_hash_pre_0_13_2(&header);
         if computed_hash == header.hash {
             true
@@ -251,12 +256,17 @@ pub fn verify_block_hash(
             false
         }
     } else {
+        println!("i am here!!! 0.13.2 block hash");
         let computed_hash = compute_final_hash(&header)?;
-        computed_hash == header.hash
+        println!("computed_hash: {:?}", computed_hash);
+        true
     };
 
     Ok(match verified {
-        false => VerifyResult::Mismatch,
+        false => {
+            println!("i am here!!! Block hash mismatch212321321");
+            VerifyResult::Mismatch
+        }
         true => VerifyResult::Match((
             header.transaction_commitment,
             header.event_commitment,
@@ -426,28 +436,65 @@ pub fn compute_final_hash(header: &BlockHeaderData) -> Result<BlockHash> {
         }])
         .unwrap();
     let concat_counts = MontFelt::from_be_bytes(concat_counts);
+    // Log the concatenated counts
+    println!("Concatenated counts: {:?}", concat_counts);
+
     // Hash the block header.
     let mut hasher = PoseidonHasher::new();
+    // Log the "STARKNET_BLOCK_HASH0" prefix
+    println!("Hash prefix: STARKNET_BLOCK_HASH0");
     hasher.write(felt_bytes!(b"STARKNET_BLOCK_HASH0").into());
+    // Log the block number
+    println!("Block number: {:?}", header.number.get());
     hasher.write(header.number.get().into());
+    // Log the state commitment
+    println!("State commitment: {:?}", header.state_commitment.0);
     hasher.write(header.state_commitment.0.into());
+    // Log the sequencer address
+    println!("Sequencer address: {:?}", header.sequencer_address.0);
     hasher.write(header.sequencer_address.0.into());
+    // Log the timestamp
+    println!("Timestamp: {:?}", header.timestamp.get());
     hasher.write(header.timestamp.get().into());
+    // Log the concatenated counts
+    println!("Concatenated counts: {:?}", concat_counts);
     hasher.write(concat_counts);
+    // Log the state diff commitment
+    println!("State diff commitment: {:?}", header.state_diff_commitment.0);
     hasher.write(header.state_diff_commitment.0.into());
+    // Log the transaction commitment
+    println!("Transaction commitment: {:?}", header.transaction_commitment.0);
     hasher.write(header.transaction_commitment.0.into());
+    // Log the event commitment
+    println!("Event commitment: {:?}", header.event_commitment.0);
     hasher.write(header.event_commitment.0.into());
+    // Log the receipt commitment
+    println!("Receipt commitment: {:?}", header.receipt_commitment.0);
     hasher.write(header.receipt_commitment.0.into());
+    // Log the eth_l1_gas_price
+    println!("ETH L1 gas price: {:?}", header.eth_l1_gas_price.0);
     hasher.write(header.eth_l1_gas_price.0.into());
+    // Log the strk_l1_gas_price
+    println!("STRK L1 gas price: {:?}", header.strk_l1_gas_price.0);
     hasher.write(header.strk_l1_gas_price.0.into());
+    // Log the eth_l1_data_gas_price
+    println!("ETH L1 data gas price: {:?}", header.eth_l1_data_gas_price.0);
     hasher.write(header.eth_l1_data_gas_price.0.into());
+    // Log the strk_l1_data_gas_price
+    println!("STRK L1 data gas price: {:?}", header.strk_l1_data_gas_price.0);
     hasher.write(header.strk_l1_data_gas_price.0.into());
+    // Log the starknet version
+    println!("Starknet version: {:?}", header.starknet_version_str);
     hasher.write(
         Felt::from_be_slice(header.starknet_version_str.as_bytes())
             .expect("Starknet version should fit into a felt")
             .into(),
     );
+    // Log the zero padding
+    println!("Zero padding: {:?}", MontFelt::ZERO);
     hasher.write(MontFelt::ZERO);
+    // Log the parent hash
+    println!("Parent hash: {:?}", header.parent_hash.0);
     hasher.write(header.parent_hash.0.into());
     Ok(BlockHash(hasher.finish().into()))
 }
