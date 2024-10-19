@@ -634,9 +634,16 @@ fn calculate_transaction_hash_with_signature(tx: &Transaction) -> Felt {
 
     let mut hasher = PoseidonHasher::new();
     hasher.write(tx.hash.0.into());
-    for elem in signature {
-        hasher.write(elem.0.into());
+
+    match tx.variant {
+        TransactionVariant::DeclareV0(_) => {},
+        _ => {
+            for elem in signature {
+                hasher.write(elem.0.into());
+            }
+        }
     }
+
     hasher.finish().into()
 }
 
